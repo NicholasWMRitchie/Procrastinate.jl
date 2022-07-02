@@ -31,10 +31,12 @@ julia> d()
 """
 struct Deferred{T}
     func::Function
-    item::Ref{T}
+    item::Base.RefValue{T}
 
-    Deferred(f::Function, ::Type{T}=Any) where {T<:Any} = new{T}(f, Ref{T}())
-    Deferred(item::T) where { T <: Any} = new{T}(()->@assert false, Ref(item))
+    function Deferred(f::Function, ::Type{T}=Base.return_types(f)[1]) where {T<:Any}
+        new{T}(f, Base.RefValue{T}())
+    end
+    Deferred(item::T) where {T<:Any} = new{T}(() -> @assert false, Base.RefValue(item))
 end
 
 Base.show(io::IO, pc::Deferred) = print(io, "$(repr(typeof(pc)))(eval=$(isassigned(pc.item)))")
@@ -45,5 +47,7 @@ function (pc::Deferred{T})()::T where {T<:Any}
     end
     return pc.item[]
 end
+
+Base.isassigned(d::Deferred) = Base.isassigned(d.item)
 
 end
