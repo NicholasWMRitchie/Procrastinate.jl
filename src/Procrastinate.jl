@@ -6,15 +6,14 @@ export Deferred
 """
     Deferred{T}
 
-A struct representing a `struct` that is computed only when needed and only once.
+A struct representing a `T` that is computed only as needed and only once.
 
 It is most useful for computing expensive members of `struct`s that may or may not
-be used.  By deferring the computation until later, the computation is avoided if
-it is never needed.
+ever be used.  By deferring the computation, the cost is avoided if the datum is 
+never used.
 
-`Deferred` takes advantage of the way in which all the necessary data items are 
-attached to a closure to ensure that it has what it need to compute the value when
-it gets around to computing the value.
+`Deferred` takes advantage of closures to ensure that the necessary data will be 
+available when needed.
 
 # Example:
 ```julia-repl
