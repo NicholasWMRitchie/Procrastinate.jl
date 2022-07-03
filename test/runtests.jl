@@ -3,7 +3,7 @@ using Test
 
 @testset "Procrastinate.jl" begin
     @testset "Basic" begin
-        df = Deferred(String) do 
+        df = Deferred() do 
             "Fish or fowl"
         end
         @test !isassigned(df.item)
@@ -28,26 +28,30 @@ using Test
         @test df() == "Fish or fowl"
         @test isassigned(df.item)
     end
+    @testset "Errors" begin
+        @test_throws AssertionError Deferred(n->n^2)
+        @test_throws AssertionError Deferred((n,m)->n*m)
+    end
     @testset "In a struct" begin
-        struct Demo{T, U}
-            item1::Deferred{T}
-            item2::Deferred{U}
-            Demo(d1::Deferred{V}, d2::Deferred{W}) where { V <: Any, W <: Any } = new{V,W}(d1,d2)
+        struct Demo
+            item1::Deferred
+            item2::Deferred
+            Demo(d1::Deferred, d2::Deferred) = new(d1,d2)
         end
-        fn(n) = n ∈ (0, 1) ? 1 : fn(n-2) + fn(n-1) # slow!
+        fn(n) = n <= 1 ? one(typeof(n)) : fn(n-2) + fn(n-1) # slow!
         n, str = 42, "It's a bird!"
         dd = Demo(Deferred() do 
                 Base.sleep(2)
                 str
             end, 
-            Deferred() do 
-                fn(n)
-            end
+            Deferred(()->fn(n)) # takes on the order of a second
         )
         @test !isassigned(dd.item1)
         @test dd.item1() == "It's a bird!"
+        @test typeof(dd.item1()) == String
         @test isassigned(dd.item1)
         @test !isassigned(dd.item2)
+        @test typeof(dd.item2()) == Int
         @test dd.item2() == 433494437
         @test isassigned(dd.item2)
     end

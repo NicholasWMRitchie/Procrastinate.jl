@@ -4,12 +4,12 @@ Strategic laziness.
 
 Procrastinate.jl does one simple thing.  It waits until the last possible moment 
 to compute an object.  It is useful for expensive to compute items in a `struct` that 
-may or may not be required.  It takes a return type and zero-argument closure.
+may or may not be required.  It takes a return type and *zero-argument* closure.
 
 # Example
 ```julia-repl
 julia> using Procrastinate
-julia> d = Deferred(String) do
+julia> d = Deferred() do
     # Some expensive function
     println("Computing!")
     return "result"
@@ -19,5 +19,27 @@ Computing!
 "result"
 julia> d()
 "result"
+```
+
+A trivial example of how it is intended to be used:
+```julia
+struct Demo
+    item1::Deferred
+    item2::Deferred
+    Demo(d1::Deferred, d2::Deferred) = new(d1,d2)
+end
+fn(n) = n ∈ (0, 1) ? 1 : fn(n-2) + fn(n-1) # slow!
+n, str = 42, "It's a bird!"
+dd = Demo(
+    Deferred() do 
+        Base.sleep(2)
+        str
+    end, 
+    Deferred(()->fn(n)) # takes a few seconds
+)
+dd.item1() # returns "It's a bird!" after a couple seconds
+dd.item2() # returns 433494437 after a few seconds
+dd.item1() # returns "It's a bird!" almost immediately
+dd.item2() # returns 433494437 almost immediately
 ```
 """
