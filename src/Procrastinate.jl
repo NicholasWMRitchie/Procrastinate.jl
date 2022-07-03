@@ -33,13 +33,15 @@ struct Deferred{T}
     func::Function
     item::Base.RefValue{T}
 
-    function Deferred(f::Function, ::Type{T}=Base.return_types(f)[1]) where {T<:Any}
+    function Deferred(f::Function, ::Type{T}=Base._return_type(f, ())) where {T<:Any}
         new{T}(f, Base.RefValue{T}())
     end
-    Deferred(item::T) where {T<:Any} = new{T}(() -> @assert false, Base.RefValue(item))
+    Deferred(t::T) where {T<:Any} = new{T}((() -> @assert false), Base.RefValue(t))
 end
 
-Base.show(io::IO, pc::Deferred) = print(io, "$(repr(typeof(pc)))(eval=$(isassigned(pc.item)))")
+function Base.show(io::IO, pc::Deferred)
+    print(io, "$(repr(typeof(pc)))(eval=$(isassigned(pc.item)))")
+end
 
 function (pc::Deferred{T})()::T where {T<:Any}
     if !isassigned(pc.item)
