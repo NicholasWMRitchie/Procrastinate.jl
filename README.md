@@ -2,11 +2,12 @@
 
 Strategic laziness.
 
-Procrastinate.jl does one simple thing.  It waits until the last possible moment 
-to compute an object.  It is useful for expensive to compute items in a `struct` that 
-may or may not be required.  It takes a return type and *zero-argument* closure.
+The `Deferred` datatype in Procrastinate.jl does one simple thing.  It waits until the 
+last possible moment to compute an object.  It is useful for expensive to compute items 
+in a `struct` that may or may not ever be required.  It takes a return type and 
+*zero-argument* closure.
 
-# Example
+### Minimal Example
 ```julia-repl
 julia> using Procrastinate
 julia> d = Deferred() do
@@ -21,7 +22,7 @@ julia> d()
 "result"
 ```
 
-A trivial example of how it is intended to be used:
+### More typical usage
 ```julia
 struct Demo
     item1::Deferred
@@ -42,4 +43,3 @@ dd.item2() # returns 433494437 after a few seconds
 dd.item1() # returns "It's a bird!" almost immediately
 dd.item2() # returns 433494437 almost immediately
 ```
-"""
