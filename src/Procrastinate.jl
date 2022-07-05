@@ -12,7 +12,7 @@ ever be used.  By deferring the computation, the cost is avoided if the datum is
 never used.
 
 `Deferred` takes advantage of closures to ensure that the necessary data will be 
-available when needed.
+available when needed.   `Deferred` is thread safe.
 
 # Example:
 ```julia-repl
@@ -31,11 +31,15 @@ julia> d()
 """
 struct Deferred
     func::Function
+    lock::ReentrantLock
     item::Base.RefValue{Any}
 
     function Deferred(f::Function) 
         @assert applicable(f) "The function passed to the Deferred constructor must take exactly zero-arguments."
-        new(f, Base.RefValue{Any}())
+        new(f, ReentrantLock(), Base.RefValue{Any}())
+    end
+    function Deferred(value) 
+        new((x->@assert false), ReentrantLock(), value)
     end
 end
 
@@ -45,7 +49,11 @@ end
 
 function (df::Deferred)()
     if !isassigned(df.item)
-        df.item[] = df.func()
+        lock(df.lock) do
+            if !isassigned(df.item)
+                df.item[] = df.func()
+            end
+        end
     end
     return df.item[]
 end
